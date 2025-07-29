@@ -1,6 +1,6 @@
 import sharp from 'sharp'
-
-import { ImageSize } from '@/generated/prisma'
+import { ImageSize } from '@prisma/client'
+import { IMAGE_SIZES, IMAGE_LIMITS } from '@/lib/constants'
 
 export interface ProcessedImage {
   data: Buffer
@@ -13,9 +13,9 @@ export async function processProductImage(
   originalType: string
 ): Promise<ProcessedImage[]> {
   const sizes = [
-    { name: ImageSize.THUMBNAIL, width: 150, height: 150 },
-    { name: ImageSize.MEDIUM, width: 500, height: 500 },
-    { name: ImageSize.FULL, width: 1200, height: 1200 }
+    { name: ImageSize.THUMBNAIL, ...IMAGE_SIZES.THUMBNAIL },
+    { name: ImageSize.MEDIUM, ...IMAGE_SIZES.MEDIUM },
+    { name: ImageSize.FULL, ...IMAGE_SIZES.FULL }
   ]
   
   const processedImages: ProcessedImage[] = []
@@ -23,7 +23,7 @@ export async function processProductImage(
   for (const size of sizes) {
     const processed = await sharp(imageBuffer)
       .resize(size.width, size.height, { fit: 'cover' })
-      .jpeg({ quality: 85 })
+      .jpeg({ quality: IMAGE_LIMITS.QUALITY })
       .toBuffer()
     
     processedImages.push({

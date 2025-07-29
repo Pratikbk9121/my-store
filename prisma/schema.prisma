@@ -6,11 +6,10 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -51,7 +50,7 @@ model Product {
 model ProductImage {
   id        String    @id @default(cuid())
   productId String
-  imageData Bytes
+  imageData String    // Base64 encoded image data for SQLite
   imageType String
   size      ImageSize
   alt       String?

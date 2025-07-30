@@ -7,19 +7,26 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { PageHeader } from "@/components/admin/page-header"
 import { useProducts } from "@/hooks/use-product"
-import { Plus } from "lucide-react"
+import { Plus, RefreshCw } from "lucide-react"
 
 export default function ProductsPage() {
   const router = useRouter()
-  const { products, isLoading, deleteProduct } = useProducts()
+  const { products, isLoading, deleteProduct, refetch } = useProducts()
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; productId: string | null }>({
     open: false,
     productId: null
   })
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   const handleAddProduct = () => {
     router.push("/admin/products/new")
+  }
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    await refetch()
+    setIsRefreshing(false)
   }
 
   const handleEditProduct = (id: string) => {
@@ -55,10 +62,21 @@ export default function ProductsPage() {
         title="Products"
         description="Manage your product inventory"
         actions={
-          <Button onClick={handleAddProduct} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Add Product
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            <Button onClick={handleAddProduct} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Add Product
+            </Button>
+          </div>
         }
       />
 

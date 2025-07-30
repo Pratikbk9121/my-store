@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Package, ShoppingCart, Users, TrendingUp, Plus, Eye } from "lucide-react"
-import { OllamaStatus } from "@/components/admin/ollama-status"
+
 import Link from "next/link"
 
 interface DashboardStats {
@@ -130,8 +130,7 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Ollama Status */}
-      <OllamaStatus />
+
 
       {/* Recent Products */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

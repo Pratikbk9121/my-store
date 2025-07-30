@@ -11,14 +11,23 @@ export const BREAKPOINTS = {
 
 // Image processing
 export const IMAGE_SIZES = {
-  THUMBNAIL: { width: 150, height: 150 },
-  MEDIUM: { width: 500, height: 500 },
-  FULL: { width: 1200, height: 1200 }
+  THUMBNAIL: { width: 300, height: 300 },
+  MEDIUM: { width: 800, height: 800 },
+  FULL: { width: 1920, height: 1920 }
 } as const
 
 export const IMAGE_LIMITS = {
   MAX_SIZE: 10 * 1024 * 1024, // 10MB
-  QUALITY: 85
+  JPEG_QUALITY: 95, // High quality for JPEG
+  WEBP_QUALITY: 90, // High quality for WebP
+  PNG_COMPRESSION: 6 // PNG compression level (0-9)
+} as const
+
+// Image format preferences
+export const IMAGE_FORMATS = {
+  PREFERRED: 'webp', // WebP for best compression/quality ratio
+  FALLBACK: 'jpeg',  // JPEG fallback for compatibility
+  PRESERVE_PNG: true // Keep PNG for images with transparency
 } as const
 
 // AI Description limits
@@ -38,7 +47,7 @@ export const DEFAULTS = {
 
 // Timeouts
 export const TIMEOUTS = {
-  OLLAMA_REQUEST: 60000, // 60 seconds
+  GEMINI_REQUEST: 30000, // 30 seconds
   API_REQUEST: 30000     // 30 seconds
 } as const
 

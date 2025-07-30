@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { ProductCard } from "@/components/molecules/product-card"
 import { SearchFilter } from "@/components/molecules/search-filter"
 import { LoadingSpinner } from "@/components/atoms/loading-spinner"
@@ -16,7 +16,7 @@ interface Product {
   category: string
   inStock: boolean
   featured: boolean
-  images?: Array<{ imageData: string; imageType: string }>
+  images?: Array<{ imageData: string; imageType: string; size: string }>
 }
 
 interface ProductGridProps {
@@ -83,7 +83,7 @@ export function ProductGrid({
     setFilteredProducts(products)
   }
 
-  const applyFilters = (query: string, filters: Record<string, string>) => {
+  const applyFilters = useCallback((query: string, filters: Record<string, string>) => {
     let filtered = products
 
     // Apply search query
@@ -107,12 +107,12 @@ export function ProductGrid({
     })
 
     setFilteredProducts(filtered)
-  }
+  }, [products])
 
   // Update filtered products when products prop changes
   useEffect(() => {
     applyFilters(searchQuery, activeFilters)
-  }, [products, searchQuery, activeFilters])
+  }, [products, searchQuery, activeFilters, applyFilters])
 
   if (isLoading) {
     return (

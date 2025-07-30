@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { generateProductDescription } from "@/lib/ai-description"
 import { processProductImage } from "@/lib/image-processing"
+import { Category } from "@prisma/client"
 
 // GET /api/admin/products/[id] - Get single product
 export async function GET(
@@ -55,7 +56,7 @@ export async function PUT(
     const formData = await request.formData()
     const name = formData.get("name") as string
     const price = parseFloat(formData.get("price") as string)
-    const category = formData.get("category") as any
+    const category = formData.get("category") as Category
     const material = formData.get("material") as string || "925 Silver"
     const weight = formData.get("weight") ? parseFloat(formData.get("weight") as string) : null
     const dimensions = formData.get("dimensions") as string || null

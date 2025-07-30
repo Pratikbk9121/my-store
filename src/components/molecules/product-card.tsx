@@ -5,7 +5,8 @@ import { PriceDisplay } from "@/components/atoms/price-display"
 import { StatusBadge } from "@/components/atoms/status-badge"
 import { Edit, Trash2, Eye } from "lucide-react"
 import { cn } from "@/lib/utils"
-
+import { getOptimizedImageProps, getFallbackImageUrl } from "@/lib/image-utils"
+import { ImageSize } from "@prisma/client"
 interface ProductCardProps {
   product: {
     id: string
@@ -15,7 +16,7 @@ interface ProductCardProps {
     category: string
     inStock: boolean
     featured: boolean
-    images?: Array<{ imageData: string; imageType: string }>
+    images?: Array<{ imageData: string; imageType: string; size: string }>
   }
   onEdit?: (id: string) => void
   onDelete?: (id: string) => void
@@ -30,17 +31,17 @@ export function ProductCard({
   onView,
   className
 }: ProductCardProps) {
-  const imageUrl = product.images?.[0]
-    ? `data:${product.images[0].imageType};base64,${product.images[0].imageData}`
-    : '/placeholder-product.jpg'
+  const hasImage = product.images && product.images.length > 0
+  const imageProps = hasImage
+    ? getOptimizedImageProps(product.id, product.name, ImageSize.MEDIUM)
+    : { src: getFallbackImageUrl(), alt: product.name, loading: 'lazy' as const, decoding: 'async' as const }
 
   return (
     <Card className={cn("overflow-hidden hover:shadow-lg transition-shadow", className)}>
       <CardHeader className="p-0">
         <div className="relative">
           <img
-            src={imageUrl}
-            alt={product.name}
+            {...imageProps}
             className="w-full h-48 object-cover"
           />
           <div className="absolute top-2 right-2 flex gap-1">

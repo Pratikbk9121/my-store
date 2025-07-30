@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 
 export interface Product {
@@ -75,13 +75,13 @@ export function useProducts() {
     try {
       setIsLoading(true)
       setError(null)
-      
+
       const response = await fetch('/api/admin/products')
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch products')
       }
-      
+
       const data = await response.json()
       setProducts(data.products || [])
     } catch (err) {
@@ -117,10 +117,10 @@ export function useProducts() {
     }
   }
 
-  return { 
-    products, 
-    isLoading, 
-    error, 
+  return {
+    products,
+    isLoading,
+    error,
     refetch: fetchProducts,
     deleteProduct
   }

@@ -112,7 +112,7 @@ export function ProductForm({ product, onSubmit, isLoading = false }: ProductFor
         setFormData(prev => ({ ...prev, description }))
 
         // Count words in the generated description
-        const wordCount = description.trim().split(/\s+/).filter(word => word.length > 0).length
+        const wordCount = description.trim().split(/\s+/).filter((word: string) => word.length > 0).length
 
         // Check if it's a fallback description
         if (description.includes("Beautiful 925 silver jewelry piece featuring elegant design")) {
@@ -127,7 +127,7 @@ export function ProductForm({ product, onSubmit, isLoading = false }: ProductFor
       }
     } catch (error) {
       console.error("Error generating description:", error)
-      toast.error("Failed to generate description. Check if Ollama is running.")
+      toast.error("Failed to generate description. Check your Google Gemini API key.")
     } finally {
       setIsGeneratingDescription(false)
     }
@@ -157,10 +157,10 @@ export function ProductForm({ product, onSubmit, isLoading = false }: ProductFor
         submitData.append("image", selectedImage)
       }
 
-      const url = product?.id 
+      const url = product?.id
         ? `/api/admin/products/${product.id}`
         : "/api/admin/products"
-      
+
       const method = product?.id ? "PUT" : "POST"
 
       const response = await fetch(url, {
@@ -171,7 +171,7 @@ export function ProductForm({ product, onSubmit, isLoading = false }: ProductFor
       if (response.ok) {
         const savedProduct = await response.json()
         toast.success(`Product ${product?.id ? 'updated' : 'created'} successfully!`)
-        
+
         if (onSubmit) {
           onSubmit(savedProduct)
         } else {

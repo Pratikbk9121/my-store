@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { generateProductDescription } from "@/lib/ai-description"
 import { processProductImage } from "@/lib/image-processing"
+import { Category, ImageSize } from "@prisma/client"
 
 // GET /api/admin/products - List all products
 export async function GET(request: NextRequest) {
@@ -24,9 +25,17 @@ export async function GET(request: NextRequest) {
 
     const skip = (page - 1) * limit
 
-    const where: any = {}
+    const where: {
+      category?: Category
+      inStock?: boolean
+      featured?: boolean
+      OR?: Array<{
+        name?: { contains: string; mode: "insensitive" }
+        description?: { contains: string; mode: "insensitive" }
+      }>
+    } = {}
     
-    if (category) where.category = category
+    if (category) where.category = category as Category
     if (search) {
       where.OR = [
         { name: { contains: search, mode: "insensitive" } },
@@ -86,7 +95,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const name = formData.get("name") as string
     const price = parseFloat(formData.get("price") as string)
-    const category = formData.get("category") as any
+    const category = formData.get("category") as Category
     const material = formData.get("material") as string || "925 Silver"
     const weight = formData.get("weight") ? parseFloat(formData.get("weight") as string) : null
     const dimensions = formData.get("dimensions") as string || null
@@ -103,7 +112,12 @@ export async function POST(request: NextRequest) {
     }
 
     let description = formData.get("description") as string || ""
-    let productImages: any[] = []
+    let productImages: Array<{
+      imageData: string
+      imageType: string
+      size: ImageSize
+      alt: string
+    }> = []
 
     // Process image if provided
     if (image && image.size > 0) {

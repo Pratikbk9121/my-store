@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { LoadingSpinner } from "@/components/atoms/loading-spinner"
-import { Upload, X, Image as ImageIcon } from "lucide-react"
+import { Upload, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface ImageUploadProps {
@@ -68,19 +68,39 @@ export function ImageUpload({
           <img
             src={preview}
             alt="Preview"
-            className="w-full h-48 object-cover rounded-lg border"
+            className="w-full h-48 object-cover rounded-lg border cursor-pointer hover:opacity-75 transition-opacity"
+            onClick={onButtonClick}
+            title="Click to change image"
           />
-          {onImageRemove && (
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black bg-opacity-50 rounded-lg">
             <Button
               type="button"
-              variant="destructive"
+              variant="secondary"
               size="sm"
-              className="absolute top-2 right-2"
-              onClick={onImageRemove}
+              className="mr-2"
+              onClick={(e) => {
+                e.stopPropagation()
+                onButtonClick()
+              }}
             >
-              <X className="h-4 w-4" />
+              <Upload className="h-4 w-4 mr-1" />
+              Change
             </Button>
-          )}
+            {onImageRemove && (
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onImageRemove()
+                }}
+              >
+                <X className="h-4 w-4 mr-1" />
+                Remove
+              </Button>
+            )}
+          </div>
         </div>
       ) : (
         <div

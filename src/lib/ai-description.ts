@@ -1,6 +1,5 @@
-import { DESCRIPTION_LIMITS, FALLBACK_DESCRIPTION, IMAGE_LIMITS, TIMEOUTS } from '@/lib/constants'
-
-interface OllamaResponse { response: string }
+import { DESCRIPTION_LIMITS, FALLBACK_DESCRIPTION } from '@/lib/constants'
+import { generateDescriptionWithGemini, isGeminiConfigured } from './gemini-vision'
 
 const getWordCount = (text: string) => text.trim().split(/\s+/).filter(Boolean).length
 const hasProperEnding = (text: string) => /[.!?]$/.test(text.trim())
@@ -45,75 +44,31 @@ function trimToSentences(text: string): string {
     : result.trim()
 }
 
-function buildContextPrompt(productName?: string, category?: string): string {
-  const context = (productName || category)
-    ? `Product context: ${productName ? `Name: "${productName}"` : ''}${productName && category ? ', ' : ''}${category ? `Category: ${category.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}` : ''}. `
-    : ''
-
-  return `${context}Write a complete, compelling product description for this 925 silver jewelry piece in exactly 60-75 words. Include: design details, materials, craftsmanship, and appeal. Be specific about the style and features visible in the image. End with a complete sentence. Make it professional for e-commerce. IMPORTANT: Write complete sentences only, do not cut off mid-sentence.`
-}
-
 export async function generateProductDescription(
   imageBuffer: Buffer,
   productName?: string,
   category?: string
 ): Promise<string> {
   try {
-    const ollamaUrl = process.env.OLLAMA_API_URL
-    if (!ollamaUrl) {
-      console.warn('OLLAMA_API_URL not configured. Using fallback description.')
-      return FALLBACK_DESCRIPTION
-    }
-    if (imageBuffer.length > IMAGE_LIMITS.MAX_SIZE) {
-      console.warn('Image too large for Ollama processing, using fallback description')
+    // Check if Gemini is configured
+    if (!isGeminiConfigured()) {
+      console.warn('Google Gemini API key not configured. Using fallback description.')
       return FALLBACK_DESCRIPTION
     }
 
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), TIMEOUTS.OLLAMA_REQUEST)
+    // Use Gemini Vision to generate description
+    const result = await generateDescriptionWithGemini(imageBuffer, productName, category)
 
-    const response = await fetch(`${ollamaUrl}/api/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'llava',
-        prompt: buildContextPrompt(productName, category),
-        images: [imageBuffer.toString('base64')],
-        stream: false,
-        options: { temperature: 0.7, top_p: 0.9, num_predict: 120, stop: ['\n\n', '---'] }
-      }),
-      signal: controller.signal
-    })
-
-    clearTimeout(timeoutId)
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Ollama API error response:', errorText)
-      if (errorText.includes('unable to make llava embedding from image')) {
-        console.warn('Image format not compatible with LLaVA, using fallback description')
-        return FALLBACK_DESCRIPTION
-      }
-      throw new Error(`Ollama API responded with status: ${response.status} - ${errorText}`)
-    }
-
-    const data: OllamaResponse = await response.json()
-    if (!data.response?.trim()) {
-      console.warn('Empty response from Ollama, using fallback description')
+    if (!result.success) {
+      console.warn('Gemini Vision failed:', result.error)
       return FALLBACK_DESCRIPTION
     }
 
-    return processDescription(data.response.trim())
+    // Process the description to ensure it meets our requirements
+    return processDescription(result.description)
 
   } catch (error) {
     console.error('AI description generation failed:', error)
-    if (error instanceof Error) {
-      if (error.name === 'AbortError') {
-        console.error('Ollama request timed out')
-      } else if (error.message.includes('ECONNREFUSED')) {
-        console.error('Cannot connect to Ollama. Make sure Ollama is running on', process.env.OLLAMA_API_URL)
-      }
-    }
     return FALLBACK_DESCRIPTION
   }
 }

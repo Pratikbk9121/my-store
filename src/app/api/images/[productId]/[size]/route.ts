@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     const { productId, size } = await params
-    
+
     // Validate size parameter
     const validSizes = Object.values(ImageSize)
     if (!validSizes.includes(size.toUpperCase() as ImageSize)) {
@@ -45,9 +45,13 @@ export async function GET(
     const headers = new Headers()
     headers.set('Content-Type', image.imageType)
     headers.set('Content-Length', imageBuffer.length.toString())
-    headers.set('Cache-Control', 'public, max-age=31536000, immutable') // Cache for 1 year
-    headers.set('ETag', `"${productId}-${size}"`)
-    
+    // Allow revalidation via ETag to keep SSR/CSR consistent while updating promptly
+    headers.set('Cache-Control', 'public, max-age=0, must-revalidate')
+
+    // Compute ETag; include image size and a basic length to reduce false positives
+    const eTag = `"${productId}-${size}-${imageBuffer.length}"`
+    headers.set('ETag', eTag)
+
     // Add alt text if available
     if (image.alt) {
       headers.set('X-Image-Alt', image.alt)
@@ -55,7 +59,7 @@ export async function GET(
 
     // Check if client has cached version
     const ifNoneMatch = request.headers.get('if-none-match')
-    if (ifNoneMatch === `"${productId}-${size}"`) {
+    if (ifNoneMatch === eTag) {
       return new NextResponse(null, { status: 304, headers })
     }
 

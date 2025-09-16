@@ -2,6 +2,8 @@
 
 import * as React from "react"
 import * as SheetPrimitive from "@radix-ui/react-dialog"
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
+
 import { XIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -48,15 +50,30 @@ function SheetContent({
   className,
   children,
   side = "right",
+  overlayClassName,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: "top" | "right" | "bottom" | "left"
+  overlayClassName?: string
 }) {
+  const generatedTitleId = React.useId()
+  const childrenArray = React.Children.toArray(children)
+  const hasTitleChild = childrenArray.some((child) => {
+    if (!React.isValidElement(child)) return false
+    const propsWithDataSlot = child.props as { [key: string]: unknown }
+    return propsWithDataSlot["data-slot"] === "sheet-title"
+  })
+  const ariaAttrs = props as unknown as React.AriaAttributes
+  const ariaLabel = ariaAttrs["aria-label"]
+  const ariaLabelledBy = ariaAttrs["aria-labelledby"]
+  const needsDefaultTitle = !ariaLabel && !ariaLabelledBy && !hasTitleChild
+
   return (
     <SheetPortal>
-      <SheetOverlay />
+      <SheetOverlay className={overlayClassName} />
       <SheetPrimitive.Content
         data-slot="sheet-content"
+        aria-labelledby={needsDefaultTitle ? generatedTitleId : ariaLabelledBy}
         className={cn(
           "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col gap-4 shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
           side === "right" &&
@@ -71,6 +88,11 @@ function SheetContent({
         )}
         {...props}
       >
+        {needsDefaultTitle && (
+          <VisuallyHidden asChild>
+            <SheetTitle id={generatedTitleId}>Dialog</SheetTitle>
+          </VisuallyHidden>
+        )}
         {children}
         <SheetPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
           <XIcon className="size-4" />

@@ -14,20 +14,24 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  role      Role     @default(CUSTOMER)
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  orders    Order[]
+  id          String   @id @default(cuid())
+  email       String   @unique
+  name        String?
+  role        Role     @default(CUSTOMER)
+  password    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  orders      Order[]
+  addresses   Address[]
+  reviews     ProductReview[]
+  redemptions CouponRedemption[]
 }
 
 model Product {
   id          String   @id @default(cuid())
   name        String
   description String?
+  brand       String?
   price       Float
   category    Category
   material    String   @default("925 Silver")
@@ -39,12 +43,14 @@ model Product {
   updatedAt   DateTime @updatedAt
   images      ProductImage[]
   orderItems  OrderItem[]
+  reviews     ProductReview[]
 
   @@index([category])
   @@index([featured])
   @@index([inStock])
   @@index([price])
   @@index([createdAt])
+  @@index([brand])
 }
 
 model ProductImage {
@@ -61,18 +67,44 @@ model ProductImage {
 }
 
 model Order {
-  id         String      @id @default(cuid())
+  id         String        @id @default(cuid())
   userId     String
-  status     OrderStatus @default(PENDING)
+  status     OrderStatus   @default(PENDING)
   total      Float
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   items      OrderItem[]
+
+  // Payments
+  paymentMethod   PaymentMethod?
+  paymentStatus   PaymentStatus  @default(PENDING)
+  transactionId   String?
+  razorpayOrderId String?
+
+  // Coupon applied snapshot
+  couponId        String?
+  couponDiscount  Float?
+  coupon          Coupon?        @relation(fields: [couponId], references: [id])
+
+  // Shipping/contact snapshot
+  shippingName       String?
+  shippingPhone      String?
+  shippingLine1      String?
+  shippingLine2      String?
+  shippingCity       String?
+  shippingState      String?
+  shippingPostalCode String?
+  shippingCountry    String?
+
+  // Coupon usage records
+  redemptions CouponRedemption[]
+
 
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+  @@index([couponId])
 }
 
 model OrderItem {
@@ -132,3 +164,93 @@ enum OrderStatus {
   DELIVERED
   CANCELLED
 }
+
+// Payment-related enums
+enum PaymentMethod {
+  RAZORPAY
+  COD
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+// Coupons
+enum CouponType {
+  PERCENT
+  FIXED
+}
+
+model Coupon {
+  id           String    @id @default(cuid())
+  code         String    @unique
+  type         CouponType
+  value        Float
+  active       Boolean   @default(true)
+  startsAt     DateTime?
+  expiresAt    DateTime?
+  minOrder     Float?
+  maxDiscount  Float?
+  usageLimit   Int?
+  perUserLimit Int?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  redemptions  CouponRedemption[]
+  orders       Order[]
+}
+
+model CouponRedemption {
+  id        String   @id @default(cuid())
+  couponId  String
+  userId    String
+  orderId   String?
+  createdAt DateTime @default(now())
+
+  coupon    Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order     Order?   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([couponId])
+  @@index([userId])
+  @@index([orderId])
+}
+
+// Address book for users
+model Address {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String?
+  phone       String?
+  line1       String
+  line2       String?
+  city        String
+  state       String
+  postalCode  String
+  country     String   @default("IN")
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Product reviews and ratings
+model ProductReview {
+  id        String   @id @default(cuid())
+  productId String
+  userId    String
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, userId])
+  @@index([productId])
+  @@index([userId])
+}
+

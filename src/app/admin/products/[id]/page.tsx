@@ -1,6 +1,7 @@
 'use client'
 
 import { useParams, useRouter } from "next/navigation"
+import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -74,11 +75,15 @@ export default function ProductViewPage() {
         {/* Image */}
         <Card>
           <CardContent className="p-6">
-            <img
-              src={imageUrl}
-              alt={product.name}
-              className="w-full h-96 object-cover rounded-lg"
-            />
+            <div className="relative h-96">
+              <Image
+                src={imageUrl}
+                alt={product.name}
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover rounded-lg"
+              />
+            </div>
           </CardContent>
         </Card>
 

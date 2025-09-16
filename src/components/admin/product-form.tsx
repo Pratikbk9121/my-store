@@ -108,14 +108,13 @@ export function ProductForm({ product, onSubmit, isLoading = false }: ProductFor
       })
 
       if (response.ok) {
-        const { description } = await response.json()
+        const { description, usedFallback } = await response.json()
         setFormData(prev => ({ ...prev, description }))
 
         // Count words in the generated description
         const wordCount = description.trim().split(/\s+/).filter((word: string) => word.length > 0).length
 
-        // Check if it's a fallback description
-        if (description.includes("Beautiful 925 silver jewelry piece featuring elegant design")) {
+        if (usedFallback) {
           toast.warning("AI description unavailable. Using optimized fallback description (75 words).")
         } else {
           const contextUsed = (formData.name || formData.category) ? " with product context" : ""
@@ -233,11 +232,11 @@ export function ProductForm({ product, onSubmit, isLoading = false }: ProductFor
               </div>
 
               <div>
-                <Label htmlFor="price">Price (USD) *</Label>
+                <Label htmlFor="price">Price (INR) *</Label>
                 <Input
                   id="price"
                   type="number"
-                  step="0.01"
+                  step="1"
                   min="0"
                   value={formData.price}
                   onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}

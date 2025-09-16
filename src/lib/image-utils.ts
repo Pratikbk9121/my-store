@@ -4,8 +4,8 @@ import { ImageSize } from '@prisma/client'
  * Generate image URL for a product
  */
 export function getImageUrl(productId: string, size: ImageSize = ImageSize.MEDIUM): string {
-  // Always add a cache-busting parameter to ensure fresh images
-  return `/api/images/${productId}/${size.toLowerCase()}?v=${Date.now()}`
+  // Use a stable URL to avoid hydration mismatches; rely on ETag/Cache-Control from API
+  return `/api/images/${productId}/${size.toLowerCase()}`
 }
 
 /**

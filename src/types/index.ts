@@ -27,6 +27,36 @@ export interface ProductImage {
   createdAt: Date
 }
 
+
+// DTOs (API JSON shapes)
+export interface ProductImageDto {
+  imageData: string
+  imageType: string
+  size: string
+  alt?: string
+}
+
+export interface ProductDto {
+  id: string
+  name: string
+  description?: string
+  price: number
+  category: string
+  material: string
+  weight?: number
+  dimensions?: string
+  inStock: boolean
+  featured: boolean
+  createdAt: string
+  updatedAt: string
+  images?: ProductImageDto[]
+}
+
+export interface GenerateDescriptionResponse {
+  description: string
+  usedFallback: boolean
+}
+
 // API response types
 export interface ApiResponse<T = unknown> {
   data?: T

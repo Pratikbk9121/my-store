@@ -1,73 +1,57 @@
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 
-export interface Product {
-  id: string
-  name: string
-  description?: string
-  price: number
-  category: string
-  material: string
-  weight?: number
-  dimensions?: string
-  inStock: boolean
-  featured: boolean
-  createdAt: string
-  updatedAt: string
-  images?: Array<{
-    imageData: string
-    imageType: string
-    size: string
-  }>
-}
+import type { ProductDto } from '@/types'
+
 
 /**
  * Hook for fetching a single product
  */
 export function useProduct(id: string | null) {
-  const [product, setProduct] = useState<Product | null>(null)
+  const [product, setProduct] = useState<ProductDto | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
+  const fetchProduct = useCallback(async () => {
     if (!id) {
       setIsLoading(false)
       return
     }
 
-    const fetchProduct = async () => {
-      try {
-        setIsLoading(true)
-        setError(null)
-        
-        const response = await fetch(`/api/admin/products/${id}`)
-        
-        if (!response.ok) {
-          throw new Error(response.status === 404 ? 'Product not found' : 'Failed to fetch product')
-        }
-        
-        const data = await response.json()
-        setProduct(data)
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load product'
-        setError(errorMessage)
-        toast.error(errorMessage)
-      } finally {
-        setIsLoading(false)
-      }
-    }
+    try {
+      setIsLoading(true)
+      setError(null)
 
-    fetchProduct()
+      const response = await fetch(`/api/admin/products/${id}`)
+
+      if (!response.ok) {
+        throw new Error(response.status === 404 ? 'Product not found' : 'Failed to fetch product')
+      }
+
+      const data = await response.json()
+      setProduct(data)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load product'
+      setError(errorMessage)
+      toast.error(errorMessage)
+    } finally {
+      setIsLoading(false)
+    }
   }, [id])
 
-  return { product, isLoading, error, refetch: () => setProduct(null) }
+  useEffect(() => {
+    // Fetch when id changes
+    fetchProduct()
+  }, [fetchProduct])
+
+  return { product, isLoading, error, refetch: fetchProduct }
 }
 
 /**
  * Hook for fetching multiple products
  */
 export function useProducts() {
-  const [products, setProducts] = useState<Product[]>([])
+  const [products, setProducts] = useState<ProductDto[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 

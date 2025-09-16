@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from "react"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -65,13 +66,16 @@ export function ImageUpload({
       
       {preview ? (
         <div className="relative mt-2">
-          <img
-            src={preview}
-            alt="Preview"
-            className="w-full h-48 object-cover rounded-lg border cursor-pointer hover:opacity-75 transition-opacity"
-            onClick={onButtonClick}
-            title="Click to change image"
-          />
+          <div className="relative w-full h-48">
+            <Image
+              src={preview}
+              alt="Preview"
+              fill
+              sizes="100vw"
+              className="object-cover rounded-lg border cursor-pointer hover:opacity-75 transition-opacity"
+              onClick={onButtonClick}
+            />
+          </div>
           <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black bg-opacity-50 rounded-lg">
             <Button
               type="button"

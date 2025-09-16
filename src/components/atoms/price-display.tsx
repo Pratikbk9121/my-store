@@ -9,7 +9,7 @@ interface PriceDisplayProps {
 
 export function PriceDisplay({ 
   amount, 
-  currency = "USD", 
+  currency = "INR", 
   size = "md", 
   className 
 }: PriceDisplayProps) {
@@ -19,12 +19,12 @@ export function PriceDisplay({
     lg: "text-lg font-semibold"
   }
 
-  const formatPrice = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-    }).format(amount)
-  }
+  const formatPrice = (amount: number, currency: string = "INR") => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency,
+    }).format(amount);
+  };
 
   return (
     <span className={cn("font-medium", sizeClasses[size], className)}>

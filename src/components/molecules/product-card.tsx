@@ -5,6 +5,7 @@ import { PriceDisplay } from "@/components/atoms/price-display"
 import { StatusBadge } from "@/components/atoms/status-badge"
 import { Edit, Trash2, Eye } from "lucide-react"
 import { cn } from "@/lib/utils"
+import Image from "next/image"
 import { getOptimizedImageProps, getFallbackImageUrl } from "@/lib/image-utils"
 import { ImageSize } from "@prisma/client"
 interface ProductCardProps {
@@ -39,10 +40,13 @@ export function ProductCard({
   return (
     <Card className={cn("overflow-hidden hover:shadow-lg transition-shadow", className)}>
       <CardHeader className="p-0">
-        <div className="relative">
-          <img
-            {...imageProps}
-            className="w-full h-48 object-cover"
+        <div className="relative h-48">
+          <Image
+            src={imageProps.src}
+            alt={imageProps.alt}
+            fill
+            sizes="(max-width: 768px) 100vw, 33vw"
+            className="object-cover"
           />
           <div className="absolute top-2 right-2 flex gap-1">
             {product.featured && (

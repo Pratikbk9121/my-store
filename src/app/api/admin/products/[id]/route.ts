@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { generateProductDescription } from "@/lib/ai-description"
 import { processProductImage } from "@/lib/image-processing"
+import { requireAdminAuth, handleApiError } from "@/lib/api-utils"
 import { Category } from "@prisma/client"
 
 // GET /api/admin/products/[id] - Get single product
@@ -12,11 +11,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session || session.user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const auth = await requireAdminAuth()
+    if (auth instanceof NextResponse) return auth
 
     const { id } = await params
     const product = await prisma.product.findUnique({
@@ -32,11 +28,7 @@ export async function GET(
 
     return NextResponse.json(product)
   } catch (error) {
-    console.error("Error fetching product:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    return handleApiError(error, "admin/products/[id]:GET")
   }
 }
 
@@ -46,11 +38,8 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session || session.user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const auth = await requireAdminAuth()
+    if (auth instanceof NextResponse) return auth
 
     const { id } = await params
     const formData = await request.formData()
@@ -152,11 +141,7 @@ export async function PUT(
       return NextResponse.json(product)
     }
   } catch (error) {
-    console.error("Error updating product:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    return handleApiError(error, "admin/products/[id]:PUT")
   }
 }
 
@@ -166,11 +151,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session || session.user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const auth = await requireAdminAuth()
+    if (auth instanceof NextResponse) return auth
 
     const { id } = await params
     // Check if product exists
@@ -189,10 +171,6 @@ export async function DELETE(
 
     return NextResponse.json({ message: "Product deleted successfully" })
   } catch (error) {
-    console.error("Error deleting product:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    return handleApiError(error, "admin/products/[id]:DELETE")
   }
 }

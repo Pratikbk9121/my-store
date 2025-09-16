@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { generateProductDescription } from "@/lib/ai-description"
 import { requireAdminAuth, handleApiError } from "@/lib/api-utils"
+import { FALLBACK_DESCRIPTION } from "@/lib/constants"
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,7 +36,8 @@ export async function POST(request: NextRequest) {
 
     const description = await generateProductDescription(imageBuffer, productName, category)
 
-    return NextResponse.json({ description })
+    const usedFallback = description === FALLBACK_DESCRIPTION
+    return NextResponse.json({ description, usedFallback })
   } catch (error) {
     return handleApiError(error, "generate-description")
   }

@@ -1,19 +1,15 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { generateProductDescription } from "@/lib/ai-description"
 import { processProductImage } from "@/lib/image-processing"
+import { requireAdminAuth, handleApiError } from "@/lib/api-utils"
 import { Category, ImageSize } from "@prisma/client"
 
 // GET /api/admin/products - List all products
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session || session.user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const auth = await requireAdminAuth()
+    if (auth instanceof NextResponse) return auth
 
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get("page") || "1")
@@ -75,22 +71,15 @@ export async function GET(request: NextRequest) {
       }
     })
   } catch (error) {
-    console.error("Error fetching products:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    return handleApiError(error, "admin/products:GET")
   }
 }
 
 // POST /api/admin/products - Create new product
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session || session.user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const auth = await requireAdminAuth()
+    if (auth instanceof NextResponse) return auth
 
     const formData = await request.formData()
     const name = formData.get("name") as string
@@ -161,10 +150,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(product, { status: 201 })
   } catch (error) {
-    console.error("Error creating product:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    return handleApiError(error, "admin/products:POST")
   }
 }

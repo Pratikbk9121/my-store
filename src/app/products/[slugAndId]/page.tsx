@@ -1,12 +1,11 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 import { prisma } from '@/lib/prisma'
 import { extractIdFromSlug } from '@/lib/slug'
-import { getOptimizedImageProps, getFallbackImageUrl } from '@/lib/image-utils'
-import { ImageSize } from '@prisma/client'
+import { getFallbackImageUrl } from '@/lib/image-utils'
 import { PdpAddToCart } from '@/components/public/pdp-add-to-cart'
 import { Reviews } from '@/components/public/reviews'
+import { ImageCarousel } from '@/components/public/image-carousel'
 
 export const revalidate = 60
 
@@ -25,9 +24,10 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
   if (!product) return notFound()
 
-  const imageProps = product.images?.length
-    ? getOptimizedImageProps(product.id, product.name, ImageSize.FULL)
-    : { src: getFallbackImageUrl(), alt: product.name, loading: 'lazy' as const, decoding: 'async' as const }
+  const fullImages = (product.images || []).filter((img) => img.size === 'FULL')
+  const images = fullImages.length
+    ? fullImages.map((im, idx) => ({ src: `data:${im.imageType};base64,${im.imageData}` as string, alt: `${product.name} ${idx + 1}` }))
+    : [{ src: getFallbackImageUrl(), alt: product.name }]
 
   const prettyCategory = product.category.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase())
 
@@ -41,7 +41,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="w-full">
-          <Image src={imageProps.src} alt={imageProps.alt} width={1200} height={800} className="w-full rounded-lg border object-cover" />
+          <ImageCarousel images={images} showThumbnails />
         </div>
         <div className="space-y-4">
           <h1 className="text-3xl font-bold">{product.name}</h1>

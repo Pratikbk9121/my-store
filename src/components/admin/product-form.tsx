@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ImageUpload } from "@/components/molecules/image-upload"
+import { ImageUploadMulti } from "@/components/molecules/image-upload-multi"
 import { LoadingSpinner } from "@/components/atoms/loading-spinner"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Sparkles, Save, ArrowLeft } from "lucide-react"
@@ -23,13 +23,13 @@ interface Product {
   material: string
   weight?: number
   dimensions?: string
-  inStock: boolean
+  stock: number
   featured: boolean
   images?: Array<{ imageData: string; imageType: string }>
 }
 
 interface ProductFormProps {
-  product?: Product
+  product?: Partial<Product> & { inStock?: boolean; stock?: number }
   onSubmit?: (product: Product) => void
   isLoading?: boolean
 }
@@ -43,6 +43,7 @@ const categories = [
 
 export function ProductForm({ product, onSubmit, isLoading = false }: ProductFormProps) {
   const router = useRouter()
+  const initialStock = product?.stock ?? (product?.inStock ? 1 : 0)
   const [formData, setFormData] = useState<Product>({
     name: "",
     description: "",
@@ -51,48 +52,25 @@ export function ProductForm({ product, onSubmit, isLoading = false }: ProductFor
     material: "925 Silver",
     weight: undefined,
     dimensions: "",
-    inStock: true,
+    stock: typeof initialStock === 'number' ? initialStock : 0,
     featured: false,
     ...product
   })
   
-  const [selectedImage, setSelectedImage] = useState<File | null>(null)
-  const [imagePreview, setImagePreview] = useState<string>("")
+  const [selectedImages, setSelectedImages] = useState<File[]>([])
   const [isGeneratingDescription, setIsGeneratingDescription] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  useEffect(() => {
-    if (product?.images?.[0]) {
-      const image = product.images[0]
-      const imageUrl = `data:${image.imageType};base64,${image.imageData}`
-      setImagePreview(imageUrl)
-    }
-  }, [product])
-
-  const handleImageSelect = (file: File) => {
-    setSelectedImage(file)
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      setImagePreview(e.target?.result as string)
-    }
-    reader.readAsDataURL(file)
-  }
-
-  const handleImageRemove = () => {
-    setSelectedImage(null)
-    setImagePreview("")
-  }
-
   const generateDescription = async () => {
-    if (!selectedImage) {
-      toast.error("Please select an image first")
+    if (!selectedImages.length) {
+      toast.error("Please select at least one image first")
       return
     }
 
     setIsGeneratingDescription(true)
     try {
       const submitFormData = new FormData()
-      submitFormData.append("image", selectedImage)
+      submitFormData.append("image", selectedImages[0])
 
       // Add product context for better AI descriptions
       if (formData.name && formData.name.trim()) {
@@ -151,9 +129,9 @@ export function ProductForm({ product, onSubmit, isLoading = false }: ProductFor
         }
       })
 
-      // Add image if selected
-      if (selectedImage) {
-        submitData.append("image", selectedImage)
+      // Add images if selected
+      if (selectedImages && selectedImages.length > 0) {
+        selectedImages.forEach((file) => submitData.append("images", file))
       }
 
       const url = product?.id
@@ -303,13 +281,18 @@ export function ProductForm({ product, onSubmit, isLoading = false }: ProductFor
               </div>
 
               <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="inStock"
-                    checked={formData.inStock}
-                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, inStock: !!checked }))}
+                <div>
+                  <Label htmlFor="stock">Stock Quantity</Label>
+                  <Input
+                    id="stock"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={formData.stock}
+                    onChange={(e) => setFormData(prev => ({ ...prev, stock: Math.max(0, parseInt(e.target.value || '0', 10)) }))}
+                    placeholder="0"
                   />
-                  <Label htmlFor="inStock">In Stock</Label>
+                  <p className="text-xs text-gray-500 mt-1">In Stock: <span className={formData.stock > 0 ? "text-green-600" : "text-red-600"}>{formData.stock > 0 ? "Yes" : "No"}</span></p>
                 </div>
 
                 <div className="flex items-center space-x-2">
@@ -327,16 +310,15 @@ export function ProductForm({ product, onSubmit, isLoading = false }: ProductFor
           {/* Right Column - Image & Description */}
           <Card>
             <CardHeader>
-              <CardTitle>Image & Description</CardTitle>
+              <CardTitle>Images & Description</CardTitle>
               <CardDescription>
-                Upload product image and add description
+                Upload one or more images and add description
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <ImageUpload
-                onImageSelect={handleImageSelect}
-                onImageRemove={handleImageRemove}
-                preview={imagePreview}
+              <ImageUploadMulti
+                files={selectedImages}
+                onChange={setSelectedImages}
                 isLoading={isLoading}
               />
 
@@ -349,7 +331,7 @@ export function ProductForm({ product, onSubmit, isLoading = false }: ProductFor
                       variant="outline"
                       size="sm"
                       onClick={generateDescription}
-                      disabled={!selectedImage || isGeneratingDescription}
+                      disabled={selectedImages.length === 0 || isGeneratingDescription}
                       className="flex items-center gap-2"
                     >
                       {isGeneratingDescription ? (

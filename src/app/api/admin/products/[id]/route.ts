@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { generateProductDescription } from "@/lib/ai-description"
 import { processProductImage } from "@/lib/image-processing"
 import { requireAdminAuth, handleApiError } from "@/lib/api-utils"
-import { Category } from "@prisma/client"
+import { Category, ImageSize } from "@prisma/client"
 
 // GET /api/admin/products/[id] - Get single product
 export async function GET(
@@ -46,13 +46,20 @@ export async function PUT(
     const name = formData.get("name") as string
     const price = parseFloat(formData.get("price") as string)
     const category = formData.get("category") as Category
-    const material = formData.get("material") as string || "925 Silver"
+    const material = (formData.get("material") as string) || "925 Silver"
     const weight = formData.get("weight") ? parseFloat(formData.get("weight") as string) : null
-    const dimensions = formData.get("dimensions") as string || null
-    const inStock = formData.get("inStock") === "true"
+    const dimensions = (formData.get("dimensions") as string) || null
+    const stockStr = formData.get("stock") as string | null
+    const stock = stockStr != null && stockStr !== "" ? parseInt(stockStr, 10) : undefined
     const featured = formData.get("featured") === "true"
-    const image = formData.get("image") as File
     const generateDescription = formData.get("generateDescription") === "true"
+
+    // Collect multiple images (supports both `images` and legacy single `image` keys)
+    const images = formData
+      .getAll("images")
+      .filter((v): v is File => v instanceof File && v.size > 0)
+    const singleImageVal = formData.get("image")
+    if (singleImageVal instanceof File && singleImageVal.size > 0) images.push(singleImageVal)
 
     if (!name || !price || !category) {
       return NextResponse.json(
@@ -72,30 +79,32 @@ export async function PUT(
       return NextResponse.json({ error: "Product not found" }, { status: 404 })
     }
 
-    // Process new image if provided
-    if (image && image.size > 0) {
-      const imageBuffer = Buffer.from(await image.arrayBuffer())
-      
-      // Generate AI description if requested
+    // Process new images if provided
+    if (images.length > 0) {
+      // Generate AI description if requested using the first image
       if (generateDescription && !description) {
-        description = await generateProductDescription(imageBuffer)
+        const firstBuffer = Buffer.from(await images[0].arrayBuffer())
+        description = await generateProductDescription(firstBuffer)
       }
 
       // Delete existing images
-      await prisma.productImage.deleteMany({
-        where: { productId: id }
-      })
+      await prisma.productImage.deleteMany({ where: { productId: id } })
 
-      // Process and create new images
-      const processedImages = await processProductImage(imageBuffer, image.type)
-      const productImages = processedImages.map(img => ({
-        imageData: img.data.toString('base64'), // Convert Buffer to base64 string for SQLite
-        imageType: img.type,
-        size: img.size,
-        alt: name
-      }))
+      // Process and create new images for all uploaded files
+      const productImages: Array<{ imageData: string; imageType: string; size: ImageSize; alt: string }> = []
+      for (const file of images) {
+        const imageBuffer = Buffer.from(await file.arrayBuffer())
+        const processedImages = await processProductImage(imageBuffer, file.type)
+        for (const img of processedImages) {
+          productImages.push({
+            imageData: img.data.toString('base64'),
+            imageType: img.type,
+            size: img.size,
+            alt: name
+          })
+        }
+      }
 
-      // Update product with new images
       const product = await prisma.product.update({
         where: { id },
         data: {
@@ -106,15 +115,11 @@ export async function PUT(
           material,
           weight,
           dimensions,
-          inStock,
+          ...(typeof stock === 'number' ? { stock, inStock: stock > 0 } : {}),
           featured,
-          images: {
-            create: productImages
-          }
+          images: { create: productImages }
         },
-        include: {
-          images: true
-        }
+        include: { images: true }
       })
 
       return NextResponse.json(product)
@@ -130,7 +135,7 @@ export async function PUT(
           material,
           weight,
           dimensions,
-          inStock,
+          ...(typeof stock === 'number' ? { stock, inStock: stock > 0 } : {}),
           featured
         },
         include: {

@@ -43,9 +43,6 @@ export function PublicProductCard({ product, href }: PublicProductCardProps) {
             className={`object-cover transition-opacity ${product.inStock === false ? 'opacity-60' : 'group-hover:opacity-95'}`}
           />
           <div className="absolute top-2 right-2 flex items-center gap-2">
-            {product.inStock === false && (
-              <span className="px-2 py-1 text-xs rounded-md bg-red-600 text-white">Out of stock</span>
-            )}
             <Badge variant="outline" className="text-white">{product.category}</Badge>
           </div>
         </div>

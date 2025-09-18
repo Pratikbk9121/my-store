@@ -85,46 +85,55 @@ export async function POST(request: NextRequest) {
     const name = formData.get("name") as string
     const price = parseFloat(formData.get("price") as string)
     const category = formData.get("category") as Category
-    const material = formData.get("material") as string || "925 Silver"
+    const material = (formData.get("material") as string) || "925 Silver"
     const weight = formData.get("weight") ? parseFloat(formData.get("weight") as string) : null
-    const dimensions = formData.get("dimensions") as string || null
-    const inStock = formData.get("inStock") === "true"
+    const dimensions = (formData.get("dimensions") as string) || null
+    const stock = formData.get("stock") ? parseInt(formData.get("stock") as string, 10) : 0
     const featured = formData.get("featured") === "true"
-    const image = formData.get("image") as File
     const generateDescription = formData.get("generateDescription") === "true"
 
-    if (!name || !price || !category) {
+    if (!name || isNaN(price) || !category) {
       return NextResponse.json(
         { error: "Name, price, and category are required" },
         { status: 400 }
       )
     }
 
+    // Collect multiple images (supports both `images` and legacy single `image` keys)
+    const images = formData
+      .getAll("images")
+      .filter((v): v is File => v instanceof File && v.size > 0)
+    const singleImageVal = formData.get("image")
+    if (singleImageVal instanceof File && singleImageVal.size > 0) images.push(singleImageVal)
+
     let description = formData.get("description") as string || ""
-    let productImages: Array<{
+    const productImages: Array<{
       imageData: string
       imageType: string
       size: ImageSize
       alt: string
     }> = []
 
-    // Process image if provided
-    if (image && image.size > 0) {
-      const imageBuffer = Buffer.from(await image.arrayBuffer())
-      
-      // Generate AI description if requested
+    if (images.length > 0) {
+      // Generate AI description once from the first image if requested
       if (generateDescription && !description) {
-        description = await generateProductDescription(imageBuffer)
+        const firstBuffer = Buffer.from(await images[0].arrayBuffer())
+        description = await generateProductDescription(firstBuffer)
       }
 
-      // Process images in different sizes
-      const processedImages = await processProductImage(imageBuffer, image.type)
-      productImages = processedImages.map(img => ({
-        imageData: img.data.toString('base64'), // Convert Buffer to base64 string for SQLite
-        imageType: img.type,
-        size: img.size,
-        alt: name
-      }))
+      // Process each uploaded image into multiple sizes
+      for (const file of images) {
+        const imageBuffer = Buffer.from(await file.arrayBuffer())
+        const processedImages = await processProductImage(imageBuffer, file.type)
+        for (const img of processedImages) {
+          productImages.push({
+            imageData: img.data.toString('base64'),
+            imageType: img.type,
+            size: img.size,
+            alt: name
+          })
+        }
+      }
     }
 
     // Create product with images
@@ -137,7 +146,8 @@ export async function POST(request: NextRequest) {
         material,
         weight,
         dimensions,
-        inStock,
+        stock,
+        inStock: stock > 0,
         featured,
         images: {
           create: productImages

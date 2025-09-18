@@ -3,9 +3,9 @@
 export const dynamic = "force-dynamic"
 
 
-import { Suspense, useState } from "react"
-import { useSearchParams } from "next/navigation"
-import { signIn } from "next-auth/react"
+import { Suspense, useState, useEffect } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
+import { signIn, useSession } from "next-auth/react"
 import Link from "next/link"
 
 export default function SignInPage() {
@@ -18,11 +18,19 @@ export default function SignInPage() {
 
 function SignInContent() {
   const sp = useSearchParams()
+  const router = useRouter()
+  const { status } = useSession()
   const callbackUrl = sp.get("callbackUrl") || "/"
   const error = sp.get("error")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace(callbackUrl)
+    }
+  }, [status, router, callbackUrl])
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()

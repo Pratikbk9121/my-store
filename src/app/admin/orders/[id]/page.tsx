@@ -42,7 +42,13 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <div className="text-sm text-gray-500">Customer</div>
-                <div className="font-medium">{order.user?.name || order.user?.email || "—"}</div>
+                <div className="font-medium">
+                  {order.userId && (order.user?.name || order.user?.email) ? (
+                    <Link href={`/admin/customers/${order.userId}`} className="underline">
+                      {order.user?.name || order.user?.email}
+                    </Link>
+                  ) : null}
+                </div>
               </div>
               <div>
                 <div className="text-sm text-gray-500">Created</div>

@@ -36,7 +36,13 @@ export default async function OrdersPage() {
             {orders.map(o => (
               <tr key={o.id} className="border-t">
                 <td className="px-3 py-2 font-mono text-xs"><Link href={`/admin/orders/${o.id}`} className="underline">{o.id.slice(0,8)}…</Link></td>
-                <td className="px-3 py-2">{o.user?.name || o.user?.email || '—'}</td>
+                <td className="px-3 py-2">
+                  {o.userId && (o.user?.name || o.user?.email) ? (
+                    <Link href={`/admin/customers/${o.userId}`} className="underline">
+                      {o.user?.name || o.user?.email}
+                    </Link>
+                  ) : null}
+                </td>
                 <td className="px-3 py-2 font-semibold">₹{o.total.toLocaleString('en-IN')}</td>
                 <td className="px-3 py-2 text-xs text-gray-600">{o.paymentMethod || '—'} {o.paymentStatus && `(${o.paymentStatus})`}</td>
                 <td className="px-3 py-2">

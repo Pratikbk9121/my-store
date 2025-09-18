@@ -4,6 +4,9 @@ import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
 import { useCart } from '@/lib/cart'
 import { useEffect, useState } from 'react'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
+
 
 
 
@@ -40,17 +43,46 @@ export function Navigation() {
           </Link>
 
           {session ? (
-            <>
-              <Link href="/orders">Orders</Link>
-              {session.user?.role === "ADMIN" && (
-                <Link href="/admin" className="bg-gray-900 text-white px-3 py-1 rounded-md text-sm font-medium">
-                  Admin Panel
-                </Link>
-              )}
-              <button onClick={() => signOut()}>Sign Out</button>
-            </>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button aria-label="User menu" className="rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900">
+                  <Avatar>
+                    <AvatarImage src={session.user?.image || undefined} alt={session.user?.name || session.user?.email || 'User'} />
+                    <AvatarFallback>{(session.user?.name || session.user?.email || '?').charAt(0).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col">
+                    <span className="font-medium truncate">{session.user?.name || 'Account'}</span>
+                    <span className="text-xs text-muted-foreground truncate">{session.user?.email}</span>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/account">My Account</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/orders">Orders</Link>
+                </DropdownMenuItem>
+                {session.user?.role === "ADMIN" && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin">Admin Panel</Link>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={(e)=>{e.preventDefault(); signOut();}}>
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
-            <Link href="/auth/signin">Sign In</Link>
+            <Link href="/auth/signin" aria-label="Sign in" className="flex items-center">
+              <Avatar>
+                <AvatarFallback>?</AvatarFallback>
+              </Avatar>
+            </Link>
           )}
         </div>
       </div>

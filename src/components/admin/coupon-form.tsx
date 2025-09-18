@@ -22,16 +22,16 @@ interface CouponFormProps {
 
 export function CouponForm({ coupon }: CouponFormProps) {
   const router = useRouter()
+  const defaultStartsAt = new Date().toISOString().slice(0,16)
+  const defaultExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0,16)
   const [code, setCode] = useState(coupon?.code || '')
   const [type, setType] = useState<CouponType>(coupon?.type || 'PERCENT')
-  const [value, setValue] = useState<number>(coupon?.value ?? 0)
+  const [value, setValue] = useState<number>(coupon?.value ?? 10)
   const [active, setActive] = useState<boolean>(coupon?.active ?? true)
-  const [startsAt, setStartsAt] = useState<string>(coupon?.startsAt ? new Date(coupon.startsAt).toISOString().slice(0,16) : '')
-  const [expiresAt, setExpiresAt] = useState<string>(coupon?.expiresAt ? new Date(coupon.expiresAt).toISOString().slice(0,16) : '')
+  const [startsAt, setStartsAt] = useState<string>(coupon?.startsAt ? new Date(coupon.startsAt).toISOString().slice(0,16) : defaultStartsAt)
+  const [expiresAt, setExpiresAt] = useState<string>(coupon?.expiresAt ? new Date(coupon.expiresAt).toISOString().slice(0,16) : defaultExpiresAt)
   const [minOrder, setMinOrder] = useState<string>(coupon?.minOrder?.toString() || '')
   const [maxDiscount, setMaxDiscount] = useState<string>(coupon?.maxDiscount?.toString() || '')
-  const [usageLimit, setUsageLimit] = useState<string>(coupon?.usageLimit?.toString() || '')
-  const [perUserLimit, setPerUserLimit] = useState<string>(coupon?.perUserLimit?.toString() || '')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string>('')
 
@@ -49,8 +49,6 @@ export function CouponForm({ coupon }: CouponFormProps) {
         expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
         minOrder: minOrder !== '' ? Number(minOrder) : null,
         maxDiscount: maxDiscount !== '' ? Number(maxDiscount) : null,
-        usageLimit: usageLimit !== '' ? Number(usageLimit) : null,
-        perUserLimit: perUserLimit !== '' ? Number(perUserLimit) : null,
       }
       const res = await fetch(coupon ? `/api/admin/coupons/${coupon.id}` : '/api/admin/coupons', {
         method: coupon ? 'PUT' : 'POST',
@@ -128,14 +126,6 @@ export function CouponForm({ coupon }: CouponFormProps) {
         <div>
           <label className="block text-sm text-gray-600 mb-1">Max Discount</label>
           <input type="number" value={maxDiscount} onChange={e => setMaxDiscount(e.target.value)} className="w-full rounded-md border px-3 py-2" />
-        </div>
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">Usage Limit</label>
-          <input type="number" value={usageLimit} onChange={e => setUsageLimit(e.target.value)} className="w-full rounded-md border px-3 py-2" />
-        </div>
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">Per-User Limit</label>
-          <input type="number" value={perUserLimit} onChange={e => setPerUserLimit(e.target.value)} className="w-full rounded-md border px-3 py-2" />
         </div>
       </div>
 

@@ -9,6 +9,7 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useMemo, useState } from 'react'
 
+
 const checkoutSchema = z.object({
   fullName: z.string().min(2, 'Full name is required'),
   phone: z.string().min(10, 'Phone must be at least 10 digits'),
@@ -50,14 +51,14 @@ declare global {
 
 export default function CheckoutPage() {
   const { data: session } = useSession()
-  const { state, totalAmount, totalItems, clear } = useCart()
+  const { state, totalAmount, totalItems, clear, couponCode } = useCart()
   const router = useRouter()
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('RAZORPAY')
-  const [couponCode, setCouponCode] = useState('')
   const [loading, setLoading] = useState(false)
-  const [preview, setPreview] = useState<{ subtotal: number; couponDiscount: number; total: number } | null>(null)
   const [addressDefaults, setAddressDefaults] = useState<Partial<CheckoutForm> | undefined>(undefined)
   const publicKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID
+
+
 
   // Load Razorpay script when needed
   useEffect(() => {
@@ -97,21 +98,8 @@ export default function CheckoutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  async function applyCoupon() {
-    try {
-      const res = await fetch('/api/orders/preview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: itemsPayload, couponCode: couponCode || undefined }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Invalid coupon')
-      setPreview({ subtotal: data.subtotal, couponDiscount: data.couponDiscount, total: data.total })
-    } catch (e) {
-      setPreview(null)
-      alert((e as Error).message)
-    }
-  }
+
+
 
   if (!session) {
     return (
@@ -214,7 +202,6 @@ export default function CheckoutPage() {
     }
   }
 
-  const displayTotal = preview?.total ?? totalAmount
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -243,20 +230,12 @@ export default function CheckoutPage() {
             <div className="text-sm text-gray-600">Items: {totalItems}</div>
             <div className="flex items-center justify-between font-semibold">
               <span>Total</span>
-              <span>₹{displayTotal.toLocaleString('en-IN')}</span>
+              <span>₹{totalAmount.toLocaleString('en-IN')}</span>
             </div>
 
+
+
             <div className="pt-2 space-y-2">
-              <div>
-                <label className="block text-sm mb-1">Coupon code</label>
-                <div className="flex gap-2">
-                  <input value={couponCode} onChange={(e) => setCouponCode(e.target.value)} className="flex-1 border rounded-md px-3 py-2" placeholder="Enter coupon" />
-                  <button onClick={applyCoupon} className="px-3 py-2 border rounded-md">Apply</button>
-                </div>
-                {preview && (
-                  <div className="text-sm text-gray-600 mt-1">Discount: ₹{preview.couponDiscount.toLocaleString('en-IN')} • Subtotal: ₹{preview.subtotal.toLocaleString('en-IN')}</div>
-                )}
-              </div>
               <div>
                 <label className="block text-sm mb-1">Payment method</label>
                 <div className="flex gap-2">

@@ -17,12 +17,21 @@ export async function POST(req: NextRequest) {
     if (!body?.items?.length) return NextResponse.json({ error: "No items" }, { status: 400 })
 
     const productIds = body.items.map(i => i.id)
-    const products = await prisma.product.findMany({ where: { id: { in: productIds } }, select: { id: true, price: true } })
+    const products = await prisma.product.findMany({ where: { id: { in: productIds } }, select: { id: true, price: true, stock: true } })
     if (products.length !== productIds.length) return NextResponse.json({ error: "Some items are invalid" }, { status: 400 })
 
     const priceMap = new Map(products.map(p => [p.id, p.price]))
+    const stockMap = new Map(products.map(p => [p.id, p.stock]))
+    const qtyById = body.items.reduce((m, it) => m.set(it.id, (m.get(it.id) || 0) + it.quantity), new Map<string, number>())
+    const stockIssues: Array<{ id: string; requested: number; available: number }> = []
+
     let subtotal = 0
     for (const it of body.items) subtotal += (priceMap.get(it.id) || 0) * it.quantity
+
+    for (const [id, qty] of qtyById) {
+      const available = stockMap.get(id) ?? 0
+      if (available < qty) stockIssues.push({ id, requested: qty, available })
+    }
 
     let couponId: string | undefined
     let couponDiscount = 0
@@ -58,7 +67,7 @@ export async function POST(req: NextRequest) {
 
     const total = Math.max(0, subtotal - couponDiscount)
 
-    return NextResponse.json({ subtotal, couponDiscount, total, couponId, couponValid })
+    return NextResponse.json({ subtotal, couponDiscount, total, couponId, couponValid, stockOk: stockIssues.length === 0, stockIssues })
   } catch (err: unknown) {
     console.error("orders/preview error", err)
     const message = err instanceof Error ? err.message : "Server error"

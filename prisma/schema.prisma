@@ -17,6 +17,7 @@ model User {
   id          String   @id @default(cuid())
   email       String   @unique
   name        String?
+  phone       String?
   role        Role     @default(CUSTOMER)
   password    String
   createdAt   DateTime @default(now())
@@ -25,6 +26,7 @@ model User {
   addresses   Address[]
   reviews     ProductReview[]
   redemptions CouponRedemption[]
+  resetTokens PasswordResetToken[]
 }
 
 model Product {
@@ -37,6 +39,7 @@ model Product {
   material    String   @default("925 Silver")
   weight      Float?
   dimensions  String?
+  stock       Int      @default(0)
   inStock     Boolean  @default(true)
   featured    Boolean  @default(false)
   createdAt   DateTime @default(now())
@@ -254,3 +257,16 @@ model ProductReview {
   @@index([userId])
 }
 
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}

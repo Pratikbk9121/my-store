@@ -31,11 +31,22 @@ export const StatusCodes = {
  */
 export async function requireAdminAuth() {
   const session = await getServerSession(authOptions)
-  
+
   if (!session || session.user.role !== "ADMIN") {
     return NextResponse.json(ApiErrors.UNAUTHORIZED, { status: StatusCodes.UNAUTHORIZED })
   }
-  
+
+  return { session, user: session.user }
+}
+
+/**
+ * Check if user is authenticated (customer or admin)
+ */
+export async function requireUserAuth() {
+  const session = await getServerSession(authOptions)
+  if (!session) {
+    return NextResponse.json(ApiErrors.UNAUTHORIZED, { status: StatusCodes.UNAUTHORIZED })
+  }
   return { session, user: session.user }
 }
 

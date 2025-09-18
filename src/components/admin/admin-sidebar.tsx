@@ -4,14 +4,15 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { 
-  Package, 
-  ShoppingCart, 
-  Users, 
-  BarChart3, 
+import {
+  Package,
+  ShoppingCart,
+  Users,
+  BarChart3,
   Settings,
   Home,
-  Plus
+  Plus,
+  Percent
 } from "lucide-react"
 
 const navigation = [
@@ -34,6 +35,16 @@ const navigation = [
     name: "Orders",
     href: "/admin/orders",
     icon: ShoppingCart,
+  },
+  {
+    name: "Coupons",
+    href: "/admin/coupons",
+    icon: Percent,
+  },
+  {
+    name: "Add Coupon",
+    href: "/admin/coupons/new",
+    icon: Plus,
   },
   {
     name: "Customers",
